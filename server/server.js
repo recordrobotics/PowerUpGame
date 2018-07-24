@@ -24,6 +24,10 @@ let PORT = 4040;
 let PREDEFINES = __dirname + "/runcode/predefines.h";
 let RUN_UPDATE_SIG = "s;[44d";
 
+// Contains information that will sent with "update"
+var players_pack = {};
+
+// Contains other player information
 var players = {};
 
 function clamp(n, l, u) {
@@ -70,14 +74,17 @@ function run(id, command, when_done) {
 }
 
 function addplayer(id) {
-    player = { id: id, left_wheel: 0.0, right_wheel: 0.0 };
+    player = {};
 
     var red = 0, blue = 0;
 
-    for(play in players) {
-        if(play.color == RED_ID)
+    for(idx in players_pack) {
+        if(!players_pack.hasOwnProperty(idx))
+            continue;
+        
+        if(players_pack[idx].color == RED_ID)
             red++;
-        else if(play.color == BLUE_ID)
+        else if(players_pack[idx].color == BLUE_ID)
             blue++;
     }
 
@@ -107,16 +114,18 @@ function addplayer(id) {
         player.heading = START_HEADING_RED;
     }
 
-    players[id] = player; 
+    players_pack[id] = player; 
+    players[id] = { code: "", left_wheel: 0.0, right_wheel: 0.0 };
 }
 
 function removeplayer(id) {
     delete players[id];
+    delete players_pack[id];
 }
 
 io.on("connection", function(socket) {
     addplayer(socket.id);
-    socket.emit("begin", players[socket.id]);
+    socket.emit("begin", players_pack[socket.id]);
     
     socket.on("code", function(data) {
         players[socket.id].code = data;
@@ -164,7 +173,7 @@ io.on("connection", function(socket) {
 });
 
 setInterval(function() {
-    io.emit("update", players)
+    io.emit("update", players_pack)
 }, TIMESTEP);
 
 server.listen(PORT);
