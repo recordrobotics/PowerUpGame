@@ -6,15 +6,66 @@ app.get("/", function(req, res) {
     res.sendFile("client.html");
 });
 
+// Constants
+let RED_ID = 0;
+let BLUE_ID = 1;
+let START_X_BLUE = 0.0;         // meters
+let START_Y_BLUE = 0.0;         // meters
+let START_X_RED = 0.0;          // meters
+let START_Y_RED = 5.0;          // meters
+let START_HEADING_BLUE = 0.0;   // degrees
+let START_HEADING_RED = 180.0;  // degrees
+let TIMESTEP = 100.0 / 6.0;     // milliseconds
+let PORT = 4000;
+
 var players = {};
-var timestep = 100 / 6;
 
 function run(id, command, when_done) {
+    // CODE TO HANDLE RUN COMMMANDS HERE
+
+
     when_done();
 }
 
-function addplayer() {
-    return {};
+function addplayer(id) {
+    player = { id: id };
+
+    var red = 0, blue = 0;
+
+    for(play in players) {
+        if(play.color == RED_ID)
+            red++;
+        else if(play.color == BLUE_ID)
+            blue++;
+    }
+
+    if(red == blue) {
+        var id = (Math.random() >= 0.5);
+    
+        if(id)
+            player.color = RED_ID;
+        else
+            player.color = BLUE_ID;
+    }
+    else if(red > blue) {
+        player.color = BLUE_ID;
+    }
+    else {
+        player.color = RED_ID;
+    }
+
+    if(player.color == BLUE_ID) {
+        player.x = START_X_BLUE;
+        player.y = START_Y_BLUE;
+        player.heading = START_HEADING_BLUE;
+    }
+    else {
+        player.x = START_X_RED;
+        player.y = START_Y_RED;
+        player.heading = START_HEADING_RED;
+    }
+
+    players[id] = player; 
 }
 
 function removeplayer(id) {
@@ -22,7 +73,7 @@ function removeplayer(id) {
 }
 
 io.on("connection", function(socket) {
-    players[socket.id] = addplayer();
+    addplayer(socket.id);
     socket.emit("begin", players[socket.id]);
     
     socket.on("code", function(data) {
@@ -43,6 +94,7 @@ io.on("connection", function(socket) {
 
 setInterval(function() {
     io.emit("update", players)
-}, timestep);
+}, TIMESTEP);
 
-server.listen(4000);
+server.listen(PORT);
+console.log("Listening at port " + PORT)
