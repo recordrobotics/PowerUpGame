@@ -20,6 +20,14 @@ let PORT = 4000;
 
 var players = {};
 
+/*var world = new p2.World({
+    gravity: [0.0, 0.0]
+});*/
+
+// ** params:
+// id: player id
+// command: string text of command
+// when_done: callback for when running is done
 function run(id, command, when_done) {
     // CODE TO HANDLE RUN COMMMANDS HERE
 
