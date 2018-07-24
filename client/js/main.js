@@ -1,4 +1,6 @@
 
+var socket = io.connect('http://localhost:4040');
+
 var customized_f_names = [];
 var customized_f_dict = {};
 
@@ -7,7 +9,15 @@ var f_content = $("#f_content");
 var function_defining = $(".function_defining");
 var function_list = $(".function_list ul");
 
+var previous_commands = "";
+var players_pack;
+
 window.onload = function (){
+
+	socket.on('begin', function(new_players_pack){
+		players_pack = new_players_pack;
+	});
+
 
 	// For when sending over to server
 	function formatContent(originalContent){
@@ -20,7 +30,6 @@ window.onload = function (){
 		f_name.val("");
 		f_content.val("");
 	}
-
 	function functionIncomplete(){
 		if (f_name.val() == "" || f_content.val() == ""){
 			function_defining.addClass("function_defining_red");
@@ -40,6 +49,9 @@ window.onload = function (){
 			.attr("id", f_name.val())
 			.text(f_name.val())
 			.appendTo(li);
+	}
+	function  focusIsOnCommandInput(){
+		return (document.activeElement == document.getElementById("current_message"));
 	}
 
 	$('#submit_button').click(function(){
@@ -61,6 +73,17 @@ window.onload = function (){
 		f_name.val(clicked_f_name);
 		f_content.val(customized_f_dict[clicked_f_name]);
 	})
+
+	document.addEventListener("keydown", function onEvent(event) {
+		if (event.which == 13 &&  focusIsOnCommandInput()){		// Enter key
+			previous_commands = $("#current_message").val() + "<br>" + previous_commands;
+			$("#current_message").val("");
+			$("#previous_messages").html(previous_commands);
+			// If command is a custom function, send the value from dictionary
+			// Else send command
+		}
+	});
+
 
 };
 
