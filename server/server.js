@@ -246,9 +246,9 @@ io.on("connection", function(socket) {
             update_function(socket.id, { name: data.function_name, body: data.function_contents }, function(error_code, info, message) {
                 console.log("Function update done with code " + error_code + ":  " + message);
                 if(error_code == 0)
-                    socket.emit("function_success", { name: info.name });
+                    socket.emit("code_success", { name: info.name });
                 else
-                    socket.emit("function_error", { code: error_code, name: info.name, message: message });
+                    socket.emit("code_error", { code: error_code, name: info.name, message: message });
             });
         });
 
