@@ -36,7 +36,7 @@ function clamp(n, l, u) {
 function take_data(id, data) {
     var vals = scanf.sscanf(data, RUN_UPDATE_SIG + " %f %f\n");
 
-    if(vals.length == 2) {
+    if(vals && vals.length == 2) {
         players[id].left_wheel = clamp(vals[0], -1.0, 1.0);
         players[id].right_wheel = clamp(vals[1], -1.0, 1.0);
         return true;
@@ -48,7 +48,36 @@ function take_data(id, data) {
 // Get the path to the file where a player with id's run code will be compiled
 // Property: is an absolute path
 function runfile(id) {
-    return __dirname + "/runcode/" + id;
+    return __dirname + "/runcode/" + id.replace(/\W/g, "");
+}
+
+function update_function_files(id, dont_include, when_done)
+{
+    var cl_id = id.replace(/\W/g, "");
+    var headers = "#ifndef __" + cl_id + "__\n#define __" + cl_id + "__\n";
+    var definitions = "#ifndef __" + cl_id + "DEFS__\n#define __" + cl_id + "DEFS__\n";
+    for(var key in players[id].functions) {
+        if(!players[id].functions.hasOwnProperty(key) || dont_include.indexOf(key) != -1)
+            continue;
+
+        headers += "void " + key + "();\n";
+        definitions += "void " + key + "() {\n" + players[id].functions[key] + "\n}\n";
+    }
+    headers += "#endif\n";
+    definitions += "#endif\n";
+
+    fs.writeFile(runfile(id) + ".h", headers, function(error) {
+        if(error)
+            when_done(error.message);
+        else {
+            fs.writeFile(runfile(id) + "_defs.h", definitions, function(error) {
+                if(error)
+                    when_done(error.message);
+                else
+                    when_done();
+            });
+        }
+    });
 }
 
 // ** params:
@@ -56,19 +85,54 @@ function runfile(id) {
 // command: string text of command
 // when_done: callback for when running is done
 function run(id, command, when_done) {
-    // CODE TO HANDLE RUN COMMMANDS HERE
-    var contents = "#include " + PREDEFINES + "\n" + players[id].code + "\nint main(){\nstart();\n" + command + "\nend();\nreturn 0;}";
-    var write = fs.writeFile(runfile(id) + ".c", contents);
-    
-    write.then(function() {
-        cp.exec("gcc -Wall " + runfile(id) + ".c -o " + runfile(id), function(error, stdout, stderr) {
-            if(error)
-                when_done(null, stderr);
-            else
-                when_done(cp.spawn(runfile(id)), "");
-        });
-    }).catch(function(message) {
-        when_done(null, message);
+    update_function_files(id, [], function(error) {
+        if(error)
+            when_done(2, null, error);
+        else {
+            var includes = "#include \"" + PREDEFINES + "\"\n#include \"" + runfile(id) + ".h\"\n#include \"" + runfile(id) + "_defs.h\"\n";
+            var contents = includes + "\nint main(){\nstart();\n" + command + "\nend();\nreturn 0;}\n";
+            var write = fs.writeFile(runfile(id) + ".c", contents, function(error) {
+                if(error)
+                    when_done(2, null, error.message);
+                else {
+                    cp.exec("gcc -Wall " + runfile(id) + ".c -o " + runfile(id), function(error, stdout, stderr) {
+                        if(error)
+                            when_done(1, null, stderr);
+                        else
+                            when_done(0, cp.spawn(runfile(id)));
+                    });
+                }
+            });
+        }
+    });
+}
+
+// Updates or adds a function to a player
+function update_function(id, data, when_done) {
+    update_function_files(id, [ data.name ], function(error) {
+        if(error)
+            when_done(2, data, error);
+        else {
+            var func = "void " + data.name + "(){\n" + data.body + "\n}\n";
+            var header = "void " + data.name + "();\n";
+            var includes = "#include \"" + PREDEFINES + "\"\n" + header + "\n#include \"" + runfile(id) + ".h\"\n#include \"" + runfile(id) + "_defs.h\"\n";
+            var contents = includes + func + "int main(){return 0;}\n";
+            var write = fs.writeFile(runfile(id) + ".c", contents, function(error) {
+                if(error)
+                    when_done(2, data, error.message);
+                else {
+                    cp.exec("gcc -Wall " + runfile(id) + ".c -o " + runfile(id), function(error, stdout, stderr) {
+                        if(error) {
+                            when_done(1, data, stderr);
+                        }
+                        else {
+                            players[id].functions[data.name] = data.body;
+                            when_done(0, data);
+                        }
+                    });
+                }
+            });
+        }
     });
 }
 
@@ -157,7 +221,7 @@ function addplayer(id) {
             player.x = starts[i][0];
             player.y = starts[i][1];
             players_pack[id] = player; 
-            players[id] = { code: "", left_wheel: 0.0, right_wheel: 0.0 };
+            players[id] = { functions: {}, left_wheel: 0.0, right_wheel: 0.0 };
             return true;
         }
     }
@@ -169,7 +233,7 @@ function removeplayer(id) {
     delete players[id];
     delete players_pack[id];
 
-    cp.exec("rm " + runfile(id) + ".c " + runfile(id));
+    cp.exec("rm " + runfile(id) + ".c " + runfile(id) + " " + runfile(id) + ".h " + runfile(id) + "_defs.h");
 }
 
 io.on("connection", function(socket) {
@@ -179,7 +243,13 @@ io.on("connection", function(socket) {
         socket.emit("begin", { all: players_pack, you: socket.id });
         
         socket.on("code", function(data) {
-            players[socket.id].code = data;
+            update_function(socket.id, { name: data.function_name, body: data.function_contents }, function(error_code, info, message) {
+                console.log("Function update done with code " + error_code + ":  " + message);
+                if(error_code == 0)
+                    socket.emit("function_success", { name: info.name });
+                else
+                    socket.emit("function_error", { code: error_code, name: info.name, message: message });
+            });
         });
 
         socket.on("cancel", function() {
@@ -190,7 +260,8 @@ io.on("connection", function(socket) {
         });
 
         socket.on("run", function(data) {
-            run(socket.id, data, function(process, error) {
+            run(socket.id, data, function(error_code, process, error) {
+                console.log("Run done with code " + error_code + ":  " + error);
                 players[socket.id].run_p = process;
                 
                 if(players[socket.id].run_p) {
@@ -198,11 +269,11 @@ io.on("connection", function(socket) {
 
                     players[socket.id].run_p.stdout.on("data", function(data) {
                         if(!take_data(socket.id, data))
-                            socket.emit("run_output", data);
+                            socket.emit("run_stdout", data);
                     });
 
                     players[socket.id].run_p.stderr.on("data", function(data) {
-                        socket.emit("run_error", data);
+                        socket.emit("run_stderr", data);
                     });
 
                     players[socket.id].run_p.on("close", function() {
@@ -211,7 +282,7 @@ io.on("connection", function(socket) {
                     });
                 }
                 else {
-                    socket.emit("run_error", error);
+                    socket.emit("run_error", { code: error_code, message: error });
                     socket.emit("done_run");
                 }
             });
@@ -226,7 +297,7 @@ io.on("connection", function(socket) {
 
 setInterval(function() {
     io.emit("update", players_pack);
-    console.log(players_pack);
+    //console.log(players_pack);
 }, TIMESTEP);
 
 server.listen(PORT);
