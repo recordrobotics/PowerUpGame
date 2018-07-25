@@ -61,6 +61,9 @@ window.onload = function (){
 
 		var isNewFunction = (customized_f_names.includes(f_name.val())) ? 0 : 1;
 		saveFunctionData(isNewFunction);
+		
+		socket.emit("code", {function_name: f_name.val(), function_contents: f_content.val()});
+
 		if (isNewFunction)
 			createFunctionLi();
 
@@ -76,11 +79,10 @@ window.onload = function (){
 
 	document.addEventListener("keydown", function onEvent(event) {
 		if (event.which == 13 &&  focusIsOnCommandInput()){		// Enter key
+			socket.emit("run", $("#current_message").val());
 			previous_commands = $("#current_message").val() + "<br>" + previous_commands;
 			$("#current_message").val("");
 			$("#previous_messages").html(previous_commands);
-			// If command is a custom function, send the value from dictionary
-			// Else send command
 		}
 	});
 
