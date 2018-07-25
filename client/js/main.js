@@ -9,6 +9,8 @@ var f_content = $("#f_content");
 var function_defining = $(".function_defining");
 var function_list = $(".function_list ul");
 
+var COMPILING = false;
+var RUNNING = false;
 var previous_commands = "";
 var players_pack;
 
@@ -16,6 +18,36 @@ window.onload = function (){
 
 	socket.on('begin', function(new_players_pack){
 		players_pack = new_players_pack;
+	});
+	socket.on('code_success', function(function_name){
+		$(".function_errors").html("Compiled successfully");
+		$(".function_errors").removeClass("function_errors_red");
+
+		var isNewFunction = (customized_f_names.includes(f_name.val())) ? 0 : 1;
+		saveFunctionData(isNewFunction);
+		if (isNewFunction)
+			createFunctionLi();
+		clearFunctionCustomizing();
+		COMPILING = false;
+	});
+	socket.on('code_error', function(error){
+		$(".function_errors").addClass("function_errors_red");
+		error_message = error.name+"<br>"+error.code+"<br>"+error.message;
+		$(".function_errors").html(error_message);
+		COMPILING = false;
+	});
+	socket.on('run_stdout', function(output){
+		new_message = "<div style='color:red; background: transparent'>"+output+"</div>";
+		previous_commands = new_message + "<br>" + previous_commands;
+		$("#previous_messages").html(previous_commands);
+	});
+	socket.on('run_stderr', function(error){
+		new_message = "<div style='color:#00FFF2; background: transparent'>"+output+"</div>";
+		previous_commands = new_message + "<br>" + previous_commands;
+		$("#previous_messages").html(previous_commands);
+	});
+	socket.on('done_run', function(){
+		RUNNING = false;
 	});
 
 
@@ -55,19 +87,14 @@ window.onload = function (){
 	}
 
 	$('#submit_button').click(function(){
-		if (functionIncomplete())
+		if (COMPILING || functionIncomplete())
 			return;
+		COMPILING = true;
 		function_defining.removeClass("function_defining_red");
 
-		var isNewFunction = (customized_f_names.includes(f_name.val())) ? 0 : 1;
-		saveFunctionData(isNewFunction);
-		
 		socket.emit("code", {function_name: f_name.val(), function_contents: f_content.val()});
+		$(".function_errors").html("COMPILING...");
 
-		if (isNewFunction)
-			createFunctionLi();
-
-		clearFunctionCustomizing();
 	})
 
 	$(".function_list").on("click", "button", function(event){
@@ -78,7 +105,8 @@ window.onload = function (){
 	})
 
 	document.addEventListener("keydown", function onEvent(event) {
-		if (event.which == 13 &&  focusIsOnCommandInput()){		// Enter key
+		if (event.which == 13 && !RUNNING && focusIsOnCommandInput()){		// Enter key
+			RUNNING = true;
 			socket.emit("run", $("#current_message").val());
 			previous_commands = $("#current_message").val() + "<br>" + previous_commands;
 			$("#current_message").val("");

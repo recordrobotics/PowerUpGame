@@ -142,12 +142,16 @@ textarea:focus{
 	position: absolute;
 	top: 62vh;
 	right: 6vh;
-	height: 30vh;
-	width: 89vh;
+	height: 26vh;
+	width: 85vh;
 	border: 4px solid #00FFF2;
 	border-radius: 1.6vh;
+	padding: 2vh;
 
 	color: white;
 	font-size: 3.5vh;
+}
+.function_errors_red{
+	border: 4px solid red !important;
 }
 
