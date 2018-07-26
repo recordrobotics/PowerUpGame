@@ -48,17 +48,32 @@ function component(width, height, color, x, y) {
 }
 
 var myGamePiece;
-function updateGameArea() {
-		gameArena.clear();
-		myGamePiece.update();
-}
+var ally1;
+var ally2;
+var enemy0;
+var enemy1;
+var enemy2;
 
+function updateGameArea() {
+	gameArena.clear();
+	myGamePiece.update();
+	ally1.update();
+	ally2.update();
+	enemy0.update();
+	enemy1.update();
+	enemy2.update();
+}
 
 
 window.onload = function (){
 
 	gameArena.start();
 	myGamePiece = new component(30, 30, "red", 30, 30);
+	ally1 = new component(30, 30, "red", 30, 200);
+	ally2 = new component(30, 30, "red", 30, 370);
+	enemy0 = new component(30, 30, "blue", 550, 30);
+	enemy1 = new component(30, 30, "blue", 550, 200);
+	enemy2 = new component(30, 30, "blue", 550, 370);
 	updateGameArea();
 
 	socket.on('begin', function(new_players_pack){
