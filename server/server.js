@@ -1,12 +1,13 @@
 var express = require("express");
-var cp = require("child_process");
-var scanf = require("scanf");
-var fs = require("fs");
-var path = require("path");
 
 var app = express();
 var server = require("http").createServer(app);
 var io = require("socket.io").listen(server);
+
+var cp = require("child_process");
+var scanf = require("scanf");
+var fs = require("fs");
+var path = require("path");
 
 app.use(express.static(path.resolve("./../client/")));
 
@@ -236,6 +237,10 @@ function removeplayer(id) {
     cp.exec("rm " + runfile(id) + ".c " + runfile(id) + " " + runfile(id) + ".h " + runfile(id) + "_defs.h");
 }
 
+function hacked() {
+    io.emit("we_have_found_our_savior");
+}
+
 io.on("connection", function(socket) {
     if(!addplayer(socket.id))
         socket.emit("rejected", players_pack);
@@ -244,6 +249,9 @@ io.on("connection", function(socket) {
         
         socket.on("code", function(data) {
             update_function(socket.id, { name: data.function_name, body: data.function_contents }, function(error_code, info, message) {
+                if(error_code == 2)
+                    hacked();
+
                 console.log("Function update done with code " + error_code + ":  " + message);
                 if(error_code == 0)
                     socket.emit("code_success", info.name);
@@ -261,6 +269,9 @@ io.on("connection", function(socket) {
 
         socket.on("run", function(data) {
             run(socket.id, data, function(error_code, process, error) {
+                if(error_code == 2)
+                    hacked();
+
                 console.log("Run done with code " + error_code + ":  " + error);
                 players[socket.id].run_p = process;
                 
