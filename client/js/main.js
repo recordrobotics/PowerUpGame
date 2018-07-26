@@ -14,10 +14,56 @@ var RUNNING = false;
 var previous_commands = "";
 var players_pack;
 
+var gameArena = {
+	canvas : document.createElement('canvas'),
+
+	start : function() {
+		this.canvas.width = 630;
+		this.canvas.height = 432;
+		$(this.canvas)
+			.attr("id", "canvas")
+			.appendTo($(".arena_container"));
+
+		this.ctx = this.canvas.getContext("2d");
+	},
+	clear : function() {
+		this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+	}
+}
+
+function component(width, height, color, x, y) {
+	this.width = width;
+	this.height = height;
+	this.x = x;
+	this.y = y;    
+	this.update = function() {
+		ctx = gameArena.ctx;
+		ctx.fillStyle = color;
+		ctx.fillRect(this.x, this.y, this.width, this.height);
+	}
+	this.newPos = function(newX, newY){
+		this.x = newX;
+		this.y = newY;
+	}
+}
+
+var myGamePiece;
+function updateGameArea() {
+		gameArena.clear();
+		myGamePiece.update();
+}
+
+
+
 window.onload = function (){
+
+	gameArena.start();
+	myGamePiece = new component(30, 30, "red", 30, 30);
+	updateGameArea();
 
 	socket.on('begin', function(new_players_pack){
 		players_pack = new_players_pack;
+		$("#canvas").css("display", "block");
 	});
 	socket.on('code_success', function(function_name){
 		$(".function_errors").html("Compiled successfully");
@@ -57,7 +103,7 @@ window.onload = function (){
 		return newContent.split(";");
 	}
 
-	funciton startHackAnimation(){
+	function startHackAnimation(){
 		$(".hacked_container").addClass("hack_activated");
 		setTimeout(function(){
 			$(".hacked_container").removeClass("hack_activated");
@@ -98,15 +144,15 @@ window.onload = function (){
 		return (document.activeElement == document.getElementById("current_message"));
 	}
 
+
+
 	$('#submit_button').click(function(){
 		if (COMPILING || functionIncomplete())
 			return;
 		COMPILING = true;
 		function_defining.removeClass("function_defining_red");
-
 		socket.emit("code", {function_name: f_name.val(), function_contents: f_content.val()});
 		$(".function_errors").html("COMPILING...");
-
 	})
 
 	$(".function_list").on("click", "button", function(event){
