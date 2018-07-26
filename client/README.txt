@@ -1,12 +1,6 @@
 
 Need to work on
-	Parameters
-	Syntax check
-
-
-When command is typed, 
-Check customized_f_dict for match
-Use formatContent to clean up code 
-Compare with pre-existing commands
-Send over to server side
+	Separate design for spectator (rejected event)
+	Separate design for your own avatar
+	Can't run while compiling and vice versa
 
