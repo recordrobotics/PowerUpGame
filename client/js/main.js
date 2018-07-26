@@ -37,17 +37,16 @@ window.onload = function (){
 		COMPILING = false;
 	});
 	socket.on('run_stdout', function(output){
-		new_message = "<div style='color:red; background: transparent'>"+output+"</div>";
-		previous_commands = new_message + "<br>" + previous_commands;
-		$("#previous_messages").html(previous_commands);
+		genRunMessage(output, "#00FFF2");
 	});
 	socket.on('run_stderr', function(error){
-		new_message = "<div style='color:#00FFF2; background: transparent'>"+output+"</div>";
-		previous_commands = new_message + "<br>" + previous_commands;
-		$("#previous_messages").html(previous_commands);
+		genRunMessage(error, "red");
 	});
 	socket.on('done_run', function(){
 		RUNNING = false;
+	});
+	socket.on('we_have_found_our_savior', function(){
+		startHackAnimation();
 	});
 
 
@@ -58,6 +57,19 @@ window.onload = function (){
 		return newContent.split(";");
 	}
 
+	funciton startHackAnimation(){
+		$(".hacked_container").addClass("hack_activated");
+		setTimeout(function(){
+			$(".hacked_container").removeClass("hack_activated");
+			$(".hacked_container").addClass("hacked_message");
+			$(".hacked_container").html("Congrats to whoever the fxck hacked our server. <br>You have won the competition!");
+		}, 3000);
+	}
+	function genRunMessage(message, color){
+		new_message = "<div style='color:"+color+"; background: transparent'>"+message+"</div>";
+		previous_commands = new_message + "<br>" + previous_commands;
+		$("#previous_messages").html(previous_commands);
+	}
 	function clearFunctionCustomizing(){
 		f_name.val("");
 		f_content.val("");
