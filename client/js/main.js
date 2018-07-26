@@ -173,7 +173,7 @@ window.onload = function (){
 
 
 	$('#submit_button').click(function(){
-		if (COMPILING || functionIncomplete())
+		if (COMPILING || RUNNING || functionIncomplete())
 			return;
 		COMPILING = true;
 		function_defining.removeClass("function_defining_red");
@@ -189,7 +189,7 @@ window.onload = function (){
 	})
 
 	document.addEventListener("keydown", function onEvent(event) {
-		if (event.which == 13 && !RUNNING && focusIsOnCommandInput()){		// Enter key
+		if (event.which == 13 && !RUNNING && !COMPILING && focusIsOnCommandInput()){		// Enter key
 			RUNNING = true;
 			socket.emit("run", $("#current_message").val());
 			previous_commands = $("#current_message").val() + "<br>" + previous_commands;
