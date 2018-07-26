@@ -281,8 +281,10 @@ io.on("connection", function(socket) {
                         players[socket.id].run_p = null;
                     });
                 }
-                else
+                else {
                     socket.emit("run_error", { code: error_code, message: error });
+                    socket.emit("done_run");
+                }
             });
         });
         
