@@ -37,17 +37,26 @@ var gameArena = {
 	}
 }
 
-function component(width, height, color, x, y) {
+function component(width, height, color, x, y, hasBorder) {
 	this.width = width;
 	this.height = height;
 	this.x = x;
 	this.y = y;    
 	this.color = color;
+	this.hasBorder = hasBorder;
 
 	this.update = function() {
+		var thickness = 4;
 		ctx = gameArena.ctx;
+
+		if (this.hasBorder){
+			// ctx.fillStyle = "black";
+			ctx.fillStyle = "#DAA520";		// Gold
+			ctx.fillRect(this.x - (thickness), this.y - (thickness), this.width + (thickness * 2), this.height + (thickness * 2));
+		}
 		ctx.fillStyle = this.color;
 		ctx.fillRect(this.x, this.y, this.width, this.height);
+
 	}
 	this.newPos = function(newX, newY){
 		this.x = newX;
@@ -69,9 +78,12 @@ window.onload = function (){
 	gameArena.start();
 
 	// Example
-	// red_players.push(new component(30, 30, "red", 30, 30));
-	// red_players.push(new component(30, 30, "red", 30, 200));
-	// red_players.push(new component(30, 30, "red", 30, 370));
+	// red_players.push(new component(30, 30, "red", 30, 30, false));
+	// red_players.push(new component(30, 30, "red", 30, 200, false));
+	// red_players.push(new component(30, 30, "red", 30, 370, false));
+	// blue_players.push(new component(30, 30, "blue", 550, 30, false));
+	// blue_players.push(new component(30, 30, "blue", 550, 200, false));
+	// blue_players.push(new component(30, 30, "blue", 550, 370, true));
 	// updateGameArea();
 
 	socket.on('begin', function(new_players_pack, my_player_id){
@@ -79,16 +91,16 @@ window.onload = function (){
 		$("#canvas").css("display", "block");
 		for(idx in players_pack){
 			var pack = players_pack[idx];
+			var hasBorder = false;
+			if (idx == my_player_id)
+				hasBorder = true;
+
 			if (pack.color == BLUE_ID)
-				blue_players.push(new component(30, 30, "blue", pack.x, pack.y));
+				blue_players.push(new component(30, 30, "blue", pack.x, pack.y, hasBorder));
 			else if (pack.color == RED_ID)
-				red_players.push(new component(30, 30, "red", pack.x, pack.y));
+				red_players.push(new component(30, 30, "red", pack.x, pack.y, hasBorder));
 		}
-		// ally1 = new component(30, 30, "red", 30, 200);
-		// ally2 = new component(30, 30, "red", 30, 370);
-		// enemy0 = new component(30, 30, "blue", 550, 30);
-		// enemy1 = new component(30, 30, "blue", 550, 200);
-		// enemy2 = new component(30, 30, "blue", 550, 370);
+
 		updateGameArea();
 	});
 	socket.on('code_success', function(function_name){
