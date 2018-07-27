@@ -50,9 +50,8 @@ function component(width, height, color, x, y, hasBorder) {
 		ctx = gameArena.ctx;
 
 		if (this.hasBorder){
-			// ctx.fillStyle = "black";
 			ctx.fillStyle = "#DAA520";		// Gold
-			ctx.fillRect(this.x - (thickness), this.y - (thickness), this.width + (thickness * 2), this.height + (thickness * 2));
+			ctx.fillRect(this.x-thickness, this.y-thickness, this.width+thickness*2, this.height+thickness*2);
 		}
 		ctx.fillStyle = this.color;
 		ctx.fillRect(this.x, this.y, this.width, this.height);
@@ -83,25 +82,16 @@ window.onload = function (){
 	// red_players.push(new component(30, 30, "red", 30, 370, false));
 	// blue_players.push(new component(30, 30, "blue", 550, 30, false));
 	// blue_players.push(new component(30, 30, "blue", 550, 200, false));
-	// blue_players.push(new component(30, 30, "blue", 550, 370, true));
+	// blue_players.push(new component(30, 30, "blue", 550, 370, false));
 	// updateGameArea();
-
+	
 	socket.on('begin', function(new_players_pack, my_player_id){
-		players_pack = new_players_pack;
-		$("#canvas").css("display", "block");
-		for(idx in players_pack){
-			var pack = players_pack[idx];
-			var hasBorder = false;
-			if (idx == my_player_id)
-				hasBorder = true;
-
-			if (pack.color == BLUE_ID)
-				blue_players.push(new component(30, 30, "blue", pack.x, pack.y, hasBorder));
-			else if (pack.color == RED_ID)
-				red_players.push(new component(30, 30, "red", pack.x, pack.y, hasBorder));
-		}
-
-		updateGameArea();
+		initializePlayers(new_players_pack, my_player_id);
+	});
+	socket.on('rejected', function(new_players_pack){
+		initializePlayers(new_players_pack, null);
+		$(".command_input").css("display", "none");
+		$(".spectator_mode").css("display", "block");
 	});
 	socket.on('code_success', function(function_name){
 		$(".function_errors").html("Compiled successfully");
@@ -141,6 +131,22 @@ window.onload = function (){
 		return newContent.split(";");
 	}
 
+	function initializePlayers(new_players_pack, my_player_id){
+		players_pack = new_players_pack;
+		$("#canvas").css("display", "block");
+		for(idx in players_pack){
+			var pack = players_pack[idx];
+			var hasBorder = false;
+			if (idx == my_player_id)
+				hasBorder = true;
+
+			if (pack.color == BLUE_ID)
+				blue_players.push(new component(30, 30, "blue", pack.x, pack.y, hasBorder));
+			else if (pack.color == RED_ID)
+				red_players.push(new component(30, 30, "red", pack.x, pack.y, hasBorder));
+		}
+		updateGameArea();
+	}
 	function startHackAnimation(){
 		$(".hacked_container").addClass("hack_activated");
 		setTimeout(function(){

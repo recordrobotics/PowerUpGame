@@ -61,6 +61,24 @@ canvas{
 	border-radius: 1.6vh;
 }
 
+.spectator_mode{
+	display: none;
+	position: relative;
+	top: 0;
+	background-color: rgba(0, 0, 0, 0.8);
+	height: 90vh;
+	width: 93vh;
+	border-radius: 1.6vh;
+}
+.spectator_mode_message{
+	padding-top: 35vh;
+	color: white;
+	font-size: 10vh;
+	text-align: center;
+	background-color: transparent;
+}
+
+
 .function_list{
 	overflow-y: auto;
 	position: absolute;
