@@ -24,8 +24,9 @@ var gameArena = {
 	canvas : document.createElement('canvas'),
 
 	start : function() {
-		this.canvas.width = 630;
-		this.canvas.height = 432;
+		this.canvas.width = 680;
+		// this.canvas.height = 432;
+		this.canvas.height = 487;
 		$(this.canvas)
 			.attr("id", "canvas")
 			.appendTo($(".arena_container"));
