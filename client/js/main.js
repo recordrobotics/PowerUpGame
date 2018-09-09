@@ -13,6 +13,7 @@ var COMPILING = false;
 var RUNNING = false;
 var previous_commands = "";
 var players_pack;
+var yourID;
 
 var RED_ID = 0;
 var BLUE_ID = 1;
@@ -85,11 +86,16 @@ window.onload = function (){
 	// blue_players.push(new component(30, 30, "blue", 550, 200, false));
 	// blue_players.push(new component(30, 30, "blue", 550, 370, false));
 	// updateGameArea();
+
+	// blue_players[2].newPos(330, 270);
+	// updateGameArea();
 	
-	socket.on('begin', function(new_players_pack, my_player_id){
-		initializePlayers(new_players_pack, my_player_id);
+	socket.on('begin', function(new_players_pack){
+		console.log("Begin");
+		initializePlayers(new_players_pack);
 	});
 	socket.on('rejected', function(new_players_pack){
+		console.log("Rejected");
 		initializePlayers(new_players_pack, null);
 		$(".command_input").css("display", "none");
 		$(".spectator_mode").css("display", "block");
@@ -123,6 +129,10 @@ window.onload = function (){
 	socket.on('we_have_found_our_savior', function(){
 		startHackAnimation();
 	});
+	socket.on('update', function(){
+		console.log("Updating arena");
+		// updateGameArea();
+	});
 
 
 	// For when sending over to server
@@ -132,20 +142,34 @@ window.onload = function (){
 		return newContent.split(";");
 	}
 
-	function initializePlayers(new_players_pack, my_player_id){
-		players_pack = new_players_pack;
+	function initializePlayers(players_pack){
 		$("#canvas").css("display", "block");
-		for(idx in players_pack){
-			var pack = players_pack[idx];
+
+		yourID = players_pack.you;
+
+		console.log(players_pack.all[yourID]);
+		console.log(players_pack.all[yourID].x);
+		console.log(yourID);
+
+		for(idx in players_pack.all){
+			var pack = players_pack.all[idx];
 			var hasBorder = false;
-			if (idx == my_player_id)
+			if (idx == yourID)
 				hasBorder = true;
+
+			console.log(players_pack.all[idx].color);
 
 			if (pack.color == BLUE_ID)
 				blue_players.push(new component(30, 30, "blue", pack.x, pack.y, hasBorder));
 			else if (pack.color == RED_ID)
 				red_players.push(new component(30, 30, "red", pack.x, pack.y, hasBorder));
 		}
+		// red_players.push(new component(30, 30, "red", 30, 30, false));
+		// red_players.push(new component(30, 30, "red", 30, 200, false));
+		// red_players.push(new component(30, 30, "red", 30, 370, false));
+		// blue_players.push(new component(30, 30, "blue", 550, 30, false));
+		// blue_players.push(new component(30, 30, "blue", 550, 200, false));
+		// blue_players.push(new component(30, 30, "blue", 550, 370, false));
 		updateGameArea();
 	}
 	function startHackAnimation(){
@@ -185,7 +209,7 @@ window.onload = function (){
 			.text(f_name.val())
 			.appendTo(li);
 	}
-	function  focusIsOnCommandInput(){
+	function focusIsOnCommandInput(){
 		return (document.activeElement == document.getElementById("current_message"));
 	}
 

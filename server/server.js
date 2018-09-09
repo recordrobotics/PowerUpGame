@@ -21,8 +21,10 @@ let PORT = 4040;
 let PREDEFINES = __dirname + "/runcode/predefines.h";
 let RUN_UPDATE_SIG = "s;[44d";
 let INVALID_START_DISTANCE_SQUARED = 3.0;
-let BLUE_STARTS = [[0.0, 0.0], [2.0, 0.0], [4.0, 0.0], [6.0, 0.0], [8.0, 0.0], [10.0, 0.0]];
-let RED_STARTS = [[0.0, 20.0], [2.0, 20.0], [4.0, 20.0], [6.0, 20.0], [8.0, 20.0], [10.0, 20.0]];
+// let BLUE_STARTS = [[0.0, 0.0], [2.0, 0.0], [4.0, 0.0], [6.0, 0.0], [8.0, 0.0], [10.0, 0.0]];
+// let RED_STARTS = [[0.0, 20.0], [2.0, 20.0], [4.0, 20.0], [6.0, 20.0], [8.0, 20.0], [10.0, 20.0]];
+let BLUE_STARTS = [[30, 30], [30, 200], [30, 370], [6.0, 0.0], [8.0, 0.0], [10.0, 0.0]];
+let RED_STARTS = [[270, 30], [270, 200], [270, 370], [6.0, 20.0], [8.0, 20.0], [10.0, 20.0]];
 
 // Contains information that will sent with "update"
 var players_pack = {};
@@ -242,6 +244,7 @@ function hacked() {
 }
 
 io.on("connection", function(socket) {
+    console.log("User connected");
     if(!addplayer(socket.id))
         socket.emit("rejected", players_pack);
     else {
