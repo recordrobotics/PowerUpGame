@@ -8,6 +8,7 @@ var cp = require("child_process");
 var scanf = require("scanf");
 var fs = require("fs");
 var path = require("path");
+var p2 = require("p2");
 
 app.use(express.static(path.resolve("./../client/")));
 
@@ -17,6 +18,7 @@ let BLUE_ID = 1;
 let START_HEADING_BLUE = 0.0;   // degrees
 let START_HEADING_RED = 180.0;  // degrees
 let TIMESTEP = 100.0 / 6.0;     // milliseconds
+let MAX_SUBSTEPS = 10;
 let PORT = 4040;
 let PREDEFINES = __dirname + "/runcode/predefines.h";
 let RUN_UPDATE_SIG = "s;[44d";
@@ -223,8 +225,13 @@ function addplayer(id) {
         if(!invalid) {
             player.x = starts[i][0];
             player.y = starts[i][1];
-            players_pack[id] = player; 
-            players[id] = { functions: {}, left_wheel: 0.0, right_wheel: 0.0 };
+            players_pack[id] = player;
+            
+            var body = new p2.Body({ mass: ROBOT_MASS, position: [player.x, player.y] });
+            var shape = new p2.Box({ width: ROBOT_WIDTH, height: ROBOT_HEIGHT });
+            body.addShape(shape);
+
+            players[id] = { body: body, functions: {}, left_wheel: 0.0, right_wheel: 0.0 };
             return true;
         }
     }
@@ -242,6 +249,10 @@ function removeplayer(id) {
 function hacked() {
     io.emit("we_have_found_our_savior");
 }
+
+var world = new p2.World({
+    gravity: [0, 0]
+});
 
 io.on("connection", function(socket) {
     console.log("User connected");
@@ -309,9 +320,26 @@ io.on("connection", function(socket) {
     }
 });
 
+var lastTime;
+
 setInterval(function() {
+    var time = Date.now();
+    var deltaT = lastTime ? (time - lastTime) / 1000 : 0;
+    
+    world.step(0.001 * TIMESTEP, deltaT, MAX_SUBSTEPS);
+    
+    lastTime = time;
+    
+    for(idx in players) {
+        if(!players.hasOwnProperty(idx))
+            continue;
+        
+        var pos = players[idx].interpolatedPosition;
+        players[idx].x = pos[0];
+        players[idx].y = pos[1];
+    }
+
     io.emit("update", players_pack);
-    //console.log(players_pack);
 }, TIMESTEP);
 
 server.listen(PORT);
